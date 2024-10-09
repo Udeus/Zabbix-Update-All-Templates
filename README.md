@@ -1,0 +1,1 @@
+# Zabbix-Update-All-Templates
