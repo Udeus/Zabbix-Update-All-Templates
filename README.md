@@ -20,14 +20,14 @@ pip install -r requirements.txt
 
 ## Usage
 Run script:
-`
+```
 python main.py --url <zabbix_address_url> --token <zabbix_api_token>
-`
+```
 
 Example:
-`
+```
 python main.py --url http://192.168.1.105 --token d36cab4cb00097b11bb97739828aed93ec521858de3e007a2d91a2047ff5a72d
-`
+```
 
 #### or
 `
