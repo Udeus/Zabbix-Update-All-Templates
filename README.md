@@ -12,10 +12,10 @@ Update all Zabbix templates
 - Zabbix server
 
 
-## Install
-`
+## Installation
+```python3.12
 pip install -r requirements.txt
-`
+```
 
 
 ## Usage
