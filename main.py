@@ -5,6 +5,7 @@ import urllib.request
 import requests
 import zipfile
 import re
+from time import strftime
 from tabulate import tabulate
 from utils import zabbix_url, get_file
 
@@ -71,9 +72,10 @@ def create_one_backup():
     api_date = f'{{"jsonrpc": "2.0","method": "configuration.export","params": {{"options": {{"templates": ["{template_id}"]}},"format": "yaml"}},"id": 1}}'
     response = connect_api(api_date)
 
-    os.makedirs("backups", exist_ok=True)
+    time_today = strftime("%d-%m-%Y")
+    os.makedirs(f"backups/{time_today}", exist_ok=True)
 
-    with open(f'backups/{template_name}.yaml', 'w') as f:
+    with open(f'backups/{time_today}/{template_name}.yaml', 'w') as f:
         f.write(response)
 
     print(f"Backup template {template_name} created")
@@ -82,17 +84,24 @@ def create_one_backup():
 def create_backups():
     api_date = '{"jsonrpc": "2.0","method": "template.get","params": {"output": ["name", "groupid"]},"id": 1}'
     resp_template_list = connect_api(api_date)
+
     template_number = 1
     list_length = len(resp_template_list)
-    os.makedirs("backups", exist_ok=True)
+
+    time_today = strftime("%d-%m-%Y")
+    os.makedirs(f"backups/{time_today}", exist_ok=True)
+
     for item in resp_template_list:
-        api_date = f'{{"jsonrpc": "2.0","method": "configuration.export","params": {{"options": {{"templates": ["{item['templateid']}"]}},"format": "yaml"}},"id": 1}}'
+        template_id = item['templateid']
+        template_name = item['name']
+
+        api_date = f'{{"jsonrpc": "2.0","method": "configuration.export","params": {{"options": {{"templates": ["{template_id}"]}},"format": "yaml"}},"id": 1}}'
         response = connect_api(api_date)
 
         print(f'{template_number}/{list_length}')
         template_number += 1
 
-        with open(f'backups/{item['name']}.yaml', 'w', encoding='utf-8') as f:
+        with open(f'backups/{time_today}/{template_name}.yaml', 'w', encoding='utf-8') as f:
             f.write(response)
 
     print('All backups created')
@@ -127,9 +136,9 @@ def download_templates():
     shutil.rmtree("tmp")
 
 
-def update_all_template(catalog):
+def update_all_template():
     download_templates()
-    for root, dirs, files in os.walk(catalog):
+    for root, dirs, files in os.walk('templates'):
         for file in files:
             if file.endswith('.yaml'):
                 template_file = os.path.join(root, file)
@@ -181,7 +190,7 @@ if api_token and api_url:
         elif command == "backups":
             create_backups()
         elif command == "update templates":
-            update_all_template('templates')
+            update_all_template()
         elif command == "author":
             print("Created by Andrzej Pietryga")
             print("Github: https://github.com/Udeus/")
