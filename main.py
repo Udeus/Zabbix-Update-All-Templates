@@ -43,19 +43,17 @@ print(tabulate(help_command, headers=["Command", "Description"], tablefmt="psql"
 print("How to use: https://github.com/Udeus/Zabbix-Update-All-Templates")
 
 
-def connect_api(api_date):
-    request_header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
-    response = requests.post(api_url, data=api_date, headers=request_header, verify=verify_ssl)
-    response = response.json()['result']
+def connect_api(api_date, api_header=False):
+    if not api_header:
+        api_header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
+    response = requests.post(api_url, data=api_date, headers=api_header, verify=verify_ssl)
 
-    return response
+    try:
+        response = response.json()['result']
+    except KeyError:
+        response = response.json()['error']
+        print(f'API error: {response}')
 
-
-def get_zabbix_version():
-    request_header = {'Content-Type': 'application/json-rpc'}
-    api_date = '{"jsonrpc": "2.0","method": "apiinfo.version","params": [],"id": 1}'
-    response = requests.post(api_url, data=api_date, headers=request_header, verify=verify_ssl)
-    response = response.json()['result']
     return response
 
 
@@ -110,15 +108,19 @@ def create_backups():
 
 
 def update_template(filename):
+    print(f'Update: {filename}')
     data_file = get_file(filename)
     api_date = f'{{"jsonrpc": "2.0","method": "configuration.import","params": {{"format": "json","rules": {{"templates": {{"createMissing": true,"updateExisting": true}},"items": {{"createMissing": true,"updateExisting": true,"deleteMissing": true}},"triggers": {{"createMissing": true,"updateExisting": true,"deleteMissing": true}},"valueMaps": {{"createMissing": true,"updateExisting": false}}}},"source": {data_file} }},"id": 1}}'
     connect_api(api_date)
-    print(f'Update: {filename}')
 
 
 def download_templates():
-    zabbix_version = get_zabbix_version()
+    request_header = {'Content-Type': 'application/json-rpc'}
+    api_date = '{"jsonrpc": "2.0","method": "apiinfo.version","params": [],"id": 1}'
+    zabbix_version = connect_api(api_date, request_header)
+
     print(f'Downloading templates for Zabbix {zabbix_version}')
+
     zabbix_version = re.search("^([0-9].[0-9])", zabbix_version)
 
     repo_url = f'https://git.zabbix.com/rest/api/latest/projects/ZBX/repos/zabbix/archive?at=refs%2Fheads%2Frelease%2F{zabbix_version.group(0)}&format=zip'
@@ -156,8 +158,7 @@ if api_token and api_url:
             data = '{"jsonrpc":"2.0","method":"apiinfo.version","params":{},"id":1}'
             header = {'Content-Type': 'application/json-rpc'}
 
-            response_api = requests.post(api_url, data=data, headers=header, verify=verify_ssl)
-            response_api.raise_for_status()
+            connect_api(data, header)
 
         except requests.exceptions.SSLError as e:
             print(f"Error SSL: {e}")
@@ -176,8 +177,7 @@ if api_token and api_url:
             data = '{"jsonrpc": "2.0","method": "token.get","params": {"output": "extend"},"id": 1}'
             header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
 
-            response_api = requests.post(api_url, data=data, headers=header, verify=verify_ssl)
-            response_api = response_api.json()["result"]
+            connect_api(data, header)
 
             command = input("Command: ")
 
