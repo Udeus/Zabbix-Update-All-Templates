@@ -17,8 +17,10 @@ help_command = [["help", "Show all commands"], ["templates", "Show all templates
 parser = argparse.ArgumentParser(description="Zabbix Update all templates | More info: https://github.com/Udeus/Zabbix-Update-All-Templates")
 parser.add_argument("--url", type=str, help="Zabbix url address")
 parser.add_argument("--token", type=str, help="API token")
+parser.add_argument("--no-verify", action="store_true", help="Turn off verify SSL")
 args = parser.parse_args()
 
+verify_ssl = not args.no_verify
 
 try:
     terminal_width = os.get_terminal_size().columns
@@ -43,7 +45,7 @@ print("How to use: https://github.com/Udeus/Zabbix-Update-All-Templates")
 
 def connect_api(api_date):
     request_header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
-    response = requests.post(api_url, data=api_date, headers=request_header)
+    response = requests.post(api_url, data=api_date, headers=request_header, verify=verify_ssl)
     response = response.json()['result']
 
     return response
@@ -52,7 +54,7 @@ def connect_api(api_date):
 def get_zabbix_version():
     request_header = {'Content-Type': 'application/json-rpc'}
     api_date = '{"jsonrpc": "2.0","method": "apiinfo.version","params": [],"id": 1}'
-    response = requests.post(api_url, data=api_date, headers=request_header)
+    response = requests.post(api_url, data=api_date, headers=request_header, verify=verify_ssl)
     response = response.json()['result']
     return response
 
@@ -154,8 +156,12 @@ if api_token and api_url:
             data = '{"jsonrpc":"2.0","method":"apiinfo.version","params":{},"id":1}'
             header = {'Content-Type': 'application/json-rpc'}
 
-            response_api = requests.post(api_url, data=data, headers=header)
+            response_api = requests.post(api_url, data=data, headers=header, verify=verify_ssl)
             response_api.raise_for_status()
+
+        except requests.exceptions.SSLError as e:
+            print(f"Error SSL: {e}")
+            break
 
         except requests.exceptions.RequestException as e:
             print(f"Error API: {e}")
@@ -170,7 +176,7 @@ if api_token and api_url:
             data = '{"jsonrpc": "2.0","method": "token.get","params": {"output": "extend"},"id": 1}'
             header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
 
-            response_api = requests.post(api_url, data=data, headers=header)
+            response_api = requests.post(api_url, data=data, headers=header, verify=verify_ssl)
             response_api = response_api.json()["result"]
 
             command = input("Command: ")
