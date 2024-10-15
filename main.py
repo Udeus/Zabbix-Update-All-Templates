@@ -17,6 +17,7 @@ help_command = [["help", "Show all commands"], ["templates", "Show all templates
 parser = argparse.ArgumentParser(description="Zabbix Update all templates | More info: https://github.com/Udeus/Zabbix-Update-All-Templates")
 parser.add_argument("--url", type=str, help="Zabbix url address")
 parser.add_argument("--token", type=str, help="API token")
+parser.add_argument("--update", action="store_true", help="Update all templates")
 parser.add_argument("--no-verify", action="store_true", help="Turn off verify SSL")
 args = parser.parse_args()
 
@@ -151,6 +152,9 @@ def update_all_template():
 
 
 if api_token and api_url:
+    if args.update:
+        update_all_template()
+        quit()
     while True:
 
         # Check URL API
