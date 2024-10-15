@@ -9,7 +9,7 @@ Update all Zabbix templates
 
 ## Requirments
 - Python 3.x + pip
-- Zabbix server
+- Zabbix server 6.0.X/7.0.X
 
 
 ## Installation and run script
