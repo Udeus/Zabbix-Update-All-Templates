@@ -5,6 +5,7 @@ import urllib.request
 import requests
 import zipfile
 import re
+import json
 from time import strftime
 from tabulate import tabulate
 from utils import zabbix_url, get_file
@@ -22,6 +23,7 @@ parser.add_argument("--no-verify", action="store_true", help="Turn off verify SS
 args = parser.parse_args()
 
 verify_ssl = not args.no_verify
+zabbix_version = None
 
 try:
     terminal_width = os.get_terminal_size().columns
@@ -40,13 +42,15 @@ else:
     api_token = input("Zabbix API token: ")
 
 
-print(tabulate(help_command, headers=["Command", "Description"], tablefmt="psql"))
-print("How to use: https://github.com/Udeus/Zabbix-Update-All-Templates")
-
-
 def connect_api(api_date, api_header=False):
-    if not api_header:
+    if zabbix_version == '6.0':
+        api_header = {'Content-Type': 'application/json-rpc'}
+        api_date = json.loads(api_date)
+        api_date['auth'] = api_token
+        api_date = json.dumps(api_date)
+    elif not api_header and not zabbix_version == '6.0':
         api_header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
+
     response = requests.post(api_url, data=api_date, headers=api_header, verify=verify_ssl)
 
     try:
@@ -56,6 +60,29 @@ def connect_api(api_date, api_header=False):
         print(f'API error: {response}')
 
     return response
+
+
+try:
+    data = '{"jsonrpc":"2.0","method":"apiinfo.version","params":{},"id":1}'
+    header = {'Content-Type': 'application/json-rpc'}
+
+    zabbix_version = connect_api(data, header)
+    zabbix_version = re.search("^([0-9].[0-9])", zabbix_version).group(0)
+
+except requests.exceptions.SSLError as e:
+    print(f"Error SSL: {e}")
+    quit()
+
+except requests.exceptions.RequestException as e:
+    print(f"Error API: {e}")
+    quit()
+
+except Exception as e:
+    print(f"Error: {e}")
+    quit()
+
+print(tabulate(help_command, headers=["Command", "Description"], tablefmt="psql"))
+print("How to use: https://github.com/Udeus/Zabbix-Update-All-Templates")
 
 
 def get_templates():
@@ -116,15 +143,9 @@ def update_template(filename):
 
 
 def download_templates():
-    request_header = {'Content-Type': 'application/json-rpc'}
-    api_date = '{"jsonrpc": "2.0","method": "apiinfo.version","params": [],"id": 1}'
-    zabbix_version = connect_api(api_date, request_header)
+    print(f'Downloading templates for Zabbix')
 
-    print(f'Downloading templates for Zabbix {zabbix_version}')
-
-    zabbix_version = re.search("^([0-9].[0-9])", zabbix_version)
-
-    repo_url = f'https://git.zabbix.com/rest/api/latest/projects/ZBX/repos/zabbix/archive?at=refs%2Fheads%2Frelease%2F{zabbix_version.group(0)}&format=zip'
+    repo_url = f'https://git.zabbix.com/rest/api/latest/projects/ZBX/repos/zabbix/archive?at=refs%2Fheads%2Frelease%2F{zabbix_version}&format=zip'
 
     name_zip_file = "zabbix.zip"
     try:
@@ -156,25 +177,6 @@ if api_token and api_url:
         update_all_template()
         quit()
     while True:
-
-        # Check URL API
-        try:
-            data = '{"jsonrpc":"2.0","method":"apiinfo.version","params":{},"id":1}'
-            header = {'Content-Type': 'application/json-rpc'}
-
-            connect_api(data, header)
-
-        except requests.exceptions.SSLError as e:
-            print(f"Error SSL: {e}")
-            break
-
-        except requests.exceptions.RequestException as e:
-            print(f"Error API: {e}")
-            break
-
-        except Exception as e:
-            print(f"Error: {e}")
-            break
 
         # Check API Token
         try:
