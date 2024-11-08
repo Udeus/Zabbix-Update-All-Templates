@@ -11,9 +11,10 @@ from tabulate import tabulate
 from utils import zabbix_url, get_file
 
 
-help_command = [["help", "Show all commands"], ["templates", "Show all templates and ID"],
-                ["backup", "Create backup one template"], ["backups", "Create backup all templates"],
-                ["update templates", "Update all templates"], ["author", "About author"], ["exit", "Close script"]]
+list_commands = [["help", "Show all commands"], ["templates", "Show all templates and ID"],
+                 ["backup", "Create backup one template"], ["backups", "Create backup all templates"],
+                 ["update templates", "Update all templates"], ["update template", "Update one template"],
+                 ["author", "About author"], ["exit", "Close script"]]
 
 parser = argparse.ArgumentParser(description="Zabbix Update all templates | More info: https://github.com/Udeus/Zabbix-Update-All-Templates")
 parser.add_argument("--url", type=str, help="Zabbix url address")
@@ -81,8 +82,17 @@ except Exception as e:
     print(f"Error: {e}")
     quit()
 
-print(tabulate(help_command, headers=["Command", "Description"], tablefmt="psql"))
-print("How to use: https://github.com/Udeus/Zabbix-Update-All-Templates")
+
+# Check API Token
+try:
+    data = '{"jsonrpc": "2.0","method": "token.get","params": {"output": "extend"},"id": 1}'
+    header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
+
+    connect_api(data, header)
+
+except Exception:
+    print("Error API: Correct your token")
+    quit()
 
 
 def get_templates():
@@ -143,7 +153,7 @@ def update_template(filename):
 
 
 def download_templates():
-    print(f'Downloading templates for Zabbix')
+    print(f'Downloading all templates for Zabbix')
 
     repo_url = f'https://git.zabbix.com/rest/api/latest/projects/ZBX/repos/zabbix/archive?at=refs%2Fheads%2Frelease%2F{zabbix_version}&format=zip'
 
@@ -163,7 +173,6 @@ def download_templates():
 
 
 def update_all_template():
-    download_templates()
     for root, dirs, files in os.walk('templates'):
         for file in files:
             if file.endswith('.yaml'):
@@ -172,42 +181,64 @@ def update_all_template():
     print('All templates updated')
 
 
+def update_one_template():
+    template_name = input("Template Name: ")
+    full_template_name = f'name: \'{template_name}\''
+
+    for root, dirs, files in os.walk('templates'):
+        for file in files:
+            if file.endswith('.yaml'):
+                file_path = os.path.join(root, file)
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as file:
+                        content = file.read()
+                        if full_template_name in content:
+                            update_template(file_path)
+                except Exception as e:
+                    print(f"Error file {file_path}: {e}")
+
+
+def help_command():
+    print(tabulate(list_commands, headers=["Command", "Description"], tablefmt="psql"))
+    print("How to use: https://github.com/Udeus/Zabbix-Update-All-Templates")
+
+
+def author_script():
+    print("Created by Andrzej Pietryga")
+    print("Github: https://github.com/Udeus/")
+
+
+def exit_script():
+    print("Closing the script...")
+    shutil.rmtree("templates")
+    quit()
+
+
+commands = {'help': help_command,
+            'templates': get_templates,
+            'backup': create_one_backup,
+            'backups': create_backups,
+            'update templates': update_all_template,
+            'update template': update_one_template,
+            'author': author_script,
+            'exit': exit_script}
+
+
+def excute_command():
+    command = input("Command: ")
+    action = commands.get(command)
+    if action:
+        action()
+    else:
+        print("Command not found")
+
+
 if api_token and api_url:
+    download_templates()
+    help_command()
+
     if args.update:
         update_all_template()
         quit()
     while True:
-
-        # Check API Token
-        try:
-            data = '{"jsonrpc": "2.0","method": "token.get","params": {"output": "extend"},"id": 1}'
-            header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
-
-            connect_api(data, header)
-
-            command = input("Command: ")
-
-        except Exception:
-            print("Error API: Correct your token")
-            break
-
-        # Commands
-        if command == "help":
-            print(tabulate(help_command, headers=["Command", "Description"], tablefmt="psql"))
-            print("How to use: https://github.com/Udeus/Zabbix-Update-All-Templates")
-        elif command == "templates":
-            get_templates()
-        elif command == "backup":
-            create_one_backup()
-        elif command == "backups":
-            create_backups()
-        elif command == "update templates":
-            update_all_template()
-        elif command == "author":
-            print("Created by Andrzej Pietryga")
-            print("Github: https://github.com/Udeus/")
-        elif command == "exit":
-            print("Closing the script...")
-            break
-        else:
-            print("Command not found")
+        excute_command()
