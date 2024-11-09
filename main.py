@@ -7,6 +7,7 @@ import zipfile
 import re
 import json
 import logging
+import config
 from time import strftime
 from tabulate import tabulate
 from utils import zabbix_url, get_file
@@ -34,13 +35,16 @@ try:
 except OSError:
     terminal_width = 80
 
-if args.url:
+if config.zabbix_url:
+    api_url = zabbix_url(config.zabbix_url)
+elif args.url:
     api_url = zabbix_url(args.url)
 else:
     api_url = zabbix_url(input("Zabbix url address: "))
 
-
-if args.token:
+if config.zabbix_api_token:
+    api_token = config.zabbix_api_token
+elif args.token:
     api_token = args.token
 else:
     api_token = input("Zabbix API token: ")
