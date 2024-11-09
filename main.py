@@ -6,6 +6,7 @@ import requests
 import zipfile
 import re
 import json
+import logging
 from time import strftime
 from tabulate import tabulate
 from utils import zabbix_url, get_file
@@ -22,6 +23,8 @@ parser.add_argument("--token", type=str, help="API token")
 parser.add_argument("--update", action="store_true", help="Update all templates")
 parser.add_argument("--no-verify", action="store_true", help="Turn off verify SSL")
 args = parser.parse_args()
+
+logging.basicConfig(filename='actions.log', format="[%(asctime)s]%(message)s", datefmt="%Y-%m-%d %H:%M", level=logging.INFO)
 
 verify_ssl = not args.no_verify
 zabbix_version = None
@@ -116,6 +119,8 @@ def create_one_backup():
     with open(f'backups/{time_today}/{template_name}.yaml', 'w') as f:
         f.write(response)
 
+    logging.info(f'[BACKUP] Backup {template_name} template created')
+
     print(f"Backup template {template_name} created")
 
 
@@ -142,6 +147,7 @@ def create_backups():
         with open(f'backups/{time_today}/{template_name}.yaml', 'w', encoding='utf-8') as f:
             f.write(response)
 
+    logging.info(f'[BACKUP] All backups created')
     print('All backups created')
 
 
@@ -178,6 +184,8 @@ def update_all_template():
             if file.endswith('.yaml'):
                 template_file = os.path.join(root, file)
                 update_template(template_file)
+
+    logging.info(f'[TEMPLATE] Updated all templates')
     print('All templates updated')
 
 
@@ -196,6 +204,9 @@ def update_one_template():
                             update_template(file_path)
                 except Exception as e:
                     print(f"Error file {file_path}: {e}")
+
+    logging.info(f'[TEMPLATE] Updated template {template_name}')
+    print(f'Updated template {template_name}')
 
 
 def help_command():
