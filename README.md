@@ -25,6 +25,16 @@ pip install -r requirements.txt
 ```
 <br>
 
+Debian based systems may show an error message "error: externally-managed-environment".
+<br>
+In this case just install dependencies manually
+
+```
+apt install python3-requests python3-tabulate python3-yaml
+```
+
+<br>
+
 Run script:
 ```
 python main.py --url <zabbix_address_url> --token <zabbix_api_token>
