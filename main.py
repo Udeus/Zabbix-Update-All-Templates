@@ -67,7 +67,8 @@ def connect_api(api_date, api_header=False):
 
     try:
         response = response.json()['result']
-    except KeyError:
+    except KeyError as e:
+        logging.error(f"Unexpected error: {e}")
         response = response.json()['error']
         print(f'API error: {response}')
 
@@ -82,14 +83,17 @@ try:
     zabbix_version = re.search("^([0-9].[0-9])", zabbix_version).group(0)
 
 except requests.exceptions.SSLError as e:
+    logging.error(f"Unexpected error: {e}")
     print(f"Error SSL: {e}")
     quit()
 
 except requests.exceptions.RequestException as e:
+    logging.error(f"Unexpected error: {e}")
     print(f"Error API: {e}")
     quit()
 
 except Exception as e:
+    logging.error(f"Unexpected error: {e}")
     print(f"Error: {e}")
     quit()
 
@@ -102,6 +106,7 @@ try:
     connect_api(data, header)
 
 except Exception:
+    logging.error("Error API: Correct your token")
     print("Error API: Correct your token")
     quit()
 
@@ -211,6 +216,7 @@ def update_one_template():
                         if full_template_name in content:
                             update_template(file_path)
                 except Exception as e:
+                    logging.error(f"Unexpected error: {e}")
                     print(f"Error file {file_path}: {e}")
 
     logging.info(f'[TEMPLATE] Updated template {template_name}')
@@ -243,7 +249,7 @@ commands = {'help': help_command,
             'exit': exit_script}
 
 
-def excute_command():
+def execute_command():
     command = input("Command: ")
     action = commands.get(command)
     if action:
@@ -260,4 +266,4 @@ if api_token and api_url:
         update_all_template()
         quit()
     while True:
-        excute_command()
+        execute_command()
