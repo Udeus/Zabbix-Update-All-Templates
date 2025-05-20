@@ -30,6 +30,10 @@ logging.basicConfig(filename='actions.log', format="[%(asctime)s]%(message)s", d
 verify_ssl = not args.no_verify
 zabbix_version = None
 
+if not verify_ssl:
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 try:
     terminal_width = os.get_terminal_size().columns
 except OSError:
