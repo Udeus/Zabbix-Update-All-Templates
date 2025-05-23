@@ -67,7 +67,7 @@ Next type url and token api
 | backup list         | Show list of all backups       |
 | backup restore      | Restore selected backup        |
 | backup delete       | Delete selected backup         |
-| about               | About templates                |
+| about               | About script                   |
 | exit                | Close script                   |
 
 ### License
