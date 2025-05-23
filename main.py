@@ -18,6 +18,8 @@ list_commands = [["help", "Show all commands"], ["templates", "Show all template
                  ["backup", "Create backup one template"], ["backups", "Create backup all templates"],
                  ["update templates", "Update all templates"], ["update template", "Update one template"],
                  ["author", "About author"], ["exit", "Close script"]]
+SCRIPT_INFO = [["Version", "1.0"], ["Author", "Andrzej Pietryga"], ["Contact", "https://github.com/Udeus"],
+               ["License", "GPL-3.0"], ["Repository", "https://github.com/Udeus/Zabbix-Update-All-Templates"]]
 
 parser = argparse.ArgumentParser(description="Zabbix Update all templates | More info: https://github.com/Udeus/Zabbix-Update-All-Templates")
 parser.add_argument("--url", type=str, help="Zabbix url address")
@@ -26,7 +28,7 @@ parser.add_argument("--update", action="store_true", help="Update all templates"
 parser.add_argument("--no-verify", action="store_true", help="Turn off verify SSL")
 args = parser.parse_args()
 
-logging.basicConfig(filename='actions.log', format="[%(asctime)s]%(message)s", datefmt="%Y-%m-%d %H:%M", level=logging.INFO)
+logging.basicConfig(filename='actions.log', format="[%(asctime)s]%(message)s", datefmt="%Y-%m-%d %H:%M", level=logging.INFO, encoding='utf-8')
 
 verify_ssl = not args.no_verify
 zabbix_version = None
@@ -63,7 +65,7 @@ def connect_api(api_date, api_header=False):
         api_date = json.loads(api_date)
         api_date['auth'] = api_token
         api_date = json.dumps(api_date)
-    elif not api_header and not zabbix_version == '6.0':
+    elif not api_header and zabbix_version != '6.0':
         api_header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
 
     response = requests.post(api_url, data=api_date, headers=api_header, verify=verify_ssl)
@@ -187,7 +189,7 @@ def download_templates():
 
     urllib.request.urlretrieve(repo_url, name_zip_file)
 
-    with zipfile.ZipFile(name_zip_file, 'r') as zip_ref:
+    with ZipFile(name_zip_file, 'r') as zip_ref:
         zip_ref.extractall("tmp/")
     os.remove(name_zip_file)
     shutil.move("tmp/templates", "templates")
@@ -231,14 +233,14 @@ def help_command():
     print("How to use: https://github.com/Udeus/Zabbix-Update-All-Templates")
 
 
-def author_script():
-    print("Created by Andrzej Pietryga")
-    print("Github: https://github.com/Udeus/")
+def print_about():
+    print(tabulate(SCRIPT_INFO, tablefmt="psql"))
 
 
 def exit_script():
     print("Closing the script...")
-    shutil.rmtree("templates")
+    if os.path.exists("templates"):
+        shutil.rmtree("templates")
     quit()
 
 
@@ -253,12 +255,12 @@ commands = {'help': help_command,
 
 
 def execute_command():
-    command = input("Command: ")
+    command = input("Command: ").strip().lower()
     action = commands.get(command)
     if action:
         action()
     else:
-        print("Command not found")
+        print("Command not found. Type 'help' to see available commands.")
 
 
 if api_token and api_url:
