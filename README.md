@@ -7,7 +7,7 @@
 
 Update all Zabbix templates
 
-## Requirments
+## Requirements
 - Python 3.x + pip
 - Zabbix server 6.0.X or 7.0.X
 
@@ -56,14 +56,19 @@ Next type url and token api
 
 ## Commands
 
-| Command          | Description                 |
-|------------------|-----------------------------|
-| help             | Show all commands           |
-| templates        | Show all templates and ID   |
-| backup           | Create backup one template  |
-| backups          | Create backup all templates |
-| update templates | Update all templates        |
-| exit             | Close script                |
+| Command             | Description                    |
+|---------------------|--------------------------------|
+| help                | Show all commands              |
+| template list       | Show all templates and ID      |
+| template update     | Update one template            |
+| template update all | Update all templates           |
+| backup create       | Create backup of one template  |
+| backup create all   | Create backup of all templates |
+| backup list         | Show list of all backups       |
+| backup restore      | Restore selected backup        |
+| backup delete       | Delete selected backup         |
+| about               | About templates                |
+| exit                | Close script                   |
 
 ### License
 

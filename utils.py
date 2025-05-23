@@ -21,6 +21,22 @@ def get_config_value(env_var, arg_value=None, input_prompt=None):
     raise ValueError(f"Configuration value for '{env_var}' is missing.")
 
 
+def get_next_backup_id():
+    if not os.path.exists("backups"):
+        return 1
+
+    existing_backups = []
+    for dirname in os.listdir("backups"):
+        if '-' in dirname:
+            try:
+                backup_id = int(dirname.split('-')[0])
+                existing_backups.append(backup_id)
+            except ValueError:
+                continue
+
+    return max(existing_backups, default=0) + 1
+
+
 def zabbix_url(url):
     if not url.endswith('/api_jsonrpc.php'):
         if not url.endswith('/'):
