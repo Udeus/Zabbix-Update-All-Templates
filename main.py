@@ -10,7 +10,8 @@ import logging
 import config
 from time import strftime
 from tabulate import tabulate
-from utils import zabbix_url, get_file
+
+from utils import zabbix_url, get_file, get_config_value
 
 
 list_commands = [["help", "Show all commands"], ["templates", "Show all templates and ID"],
@@ -39,19 +40,21 @@ try:
 except OSError:
     terminal_width = 80
 
-if config.zabbix_url:
-    api_url = zabbix_url(config.zabbix_url)
-elif args.url:
-    api_url = zabbix_url(args.url)
-else:
-    api_url = zabbix_url(input("Zabbix url address: "))
 
-if config.zabbix_api_token:
-    api_token = config.zabbix_api_token
-elif args.token:
-    api_token = args.token
-else:
-    api_token = input("Zabbix API token: ")
+api_url = zabbix_url(
+    get_config_value(
+        env_var='ZABBIX_URL',
+        arg_value=args.url,
+        input_prompt="Zabbix url address: "
+    )
+)
+
+
+api_token = get_config_value(
+    env_var='ZABBIX_API_TOKEN',
+    arg_value=args.token,
+    input_prompt="Zabbix API token: "
+)
 
 
 def connect_api(api_date, api_header=False):
