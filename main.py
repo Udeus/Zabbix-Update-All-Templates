@@ -79,13 +79,23 @@ def connect_api(api_date, api_header=False):
     response = requests.post(api_url, data=api_date, headers=api_header, verify=verify_ssl)
 
     try:
-        response = response.json()['result']
-    except KeyError as e:
-        logging.error(f"Unexpected error: {e}")
-        response = response.json()['error']
-        print(f'API error: {response}')
+        data = response.json()
+    except ValueError:
+        logging.error(
+            f"Non-JSON response from API "
+            f"(status={response.status_code}): {response.text[:200]}"
+        )
+        raise
 
-    return response
+    if 'error' in data:
+        logging.error(f"API error: {data['error']}")
+        raise RuntimeError(data['error'])
+
+    if 'result' not in data:
+        logging.error(f"Unexpected API response: {data}")
+        raise RuntimeError("Missing result in API response")
+
+    return data['result']
 
 
 try:
@@ -311,7 +321,11 @@ def update_all_template():
         for file in files:
             if file.endswith('.yaml'):
                 template_file = os.path.join(root, file)
-                update_template(template_file)
+                try:
+                    update_template(template_file)
+                except Exception as e:
+                    logging.error(f'[TEMPLATE] Error updating {template_file}: {e}')
+                    print(f'Error updating {template_file}: {e}')
 
     logging.info(f'[TEMPLATE] Updated all templates')
     print('All templates updated')
