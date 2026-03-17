@@ -4,13 +4,10 @@ import logging
 import re
 import os
 import shutil
-import urllib.request
+import requests
 from zipfile import ZipFile
 from time import strftime
-
-import requests
 from tabulate import tabulate
-
 from utils import zabbix_url, get_file, get_config_value, get_next_backup_id
 
 
@@ -307,13 +304,33 @@ def download_templates():
     except:
         pass
 
-    urllib.request.urlretrieve(repo_url, name_zip_file)
+    try:
+        response = requests.get(repo_url, stream=True)
+        response.raise_for_status()
 
-    with ZipFile(name_zip_file, 'r') as zip_ref:
-        zip_ref.extractall("tmp/")
-    os.remove(name_zip_file)
-    shutil.move("tmp/templates", "templates")
-    shutil.rmtree("tmp")
+        with open(name_zip_file, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+    except requests.exceptions.SSLError as e:
+        logging.error(f"SSL Error downloading templates: {e}")
+        print(f"SSL Error: {e}")
+        return
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error downloading templates: {e}")
+        print(f"Download Error: {e}")
+        return
+
+    try:
+        with ZipFile(name_zip_file, 'r') as zip_ref:
+            zip_ref.extractall("tmp/")
+        os.remove(name_zip_file)
+        shutil.move("tmp/templates", "templates")
+        shutil.rmtree("tmp")
+        print("Templates downloaded successfully")
+    except Exception as e:
+        logging.error(f"Error extracting templates: {e}")
+        print(f"Extraction Error: {e}")
 
 
 def update_all_template():
