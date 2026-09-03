@@ -38,6 +38,8 @@ logging.basicConfig(filename='actions.log', format="[%(asctime)s]%(message)s", d
 verify_ssl = not args.no_verify
 zabbix_version = None
 
+REQUEST_TIMEOUT = (10, 60)
+
 if not verify_ssl:
     import urllib3
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -73,7 +75,7 @@ def connect_api(api_date, api_header=False):
     elif not api_header and zabbix_version != '6.0':
         api_header = {'Authorization': 'Bearer ' + api_token, 'Content-Type': 'application/json-rpc'}
 
-    response = requests.post(api_url, data=api_date, headers=api_header, verify=verify_ssl)
+    response = requests.post(api_url, data=api_date, headers=api_header, verify=verify_ssl, timeout=REQUEST_TIMEOUT)
 
     try:
         data = response.json()
@@ -305,7 +307,7 @@ def download_templates():
         pass
 
     try:
-        response = requests.get(repo_url, stream=True)
+        response = requests.get(repo_url, stream=True, verify=verify_ssl, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
 
         with open(name_zip_file, 'wb') as f:
